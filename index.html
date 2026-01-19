@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Performance Analytics</title>
+    <meta name="viewport" content="width=390, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-green: rgb(35, 115, 84);
+            --dark-green: #0a3022;
+            --bright-gold: #ffe16b;
+            --mid-gold: rgb(242, 194, 12);
+            --deep-gold: #b08d0a;
+            --gold-gradient: linear-gradient(135deg, var(--bright-gold) 0%, var(--mid-gold) 50%, var(--deep-gold) 100%);
+            --glass-bg: rgba(255, 255, 255, 0.98);
+            --input-bg: rgba(224, 247, 244, 0.7);
+            --glow-gold: rgba(242, 194, 12, 0.6);
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: radial-gradient(circle at top, var(--primary-green) 0%, #051a12 100%);
+            color: #333; margin: 0; padding: 0;
+            display: flex; justify-content: center; min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .app { width: 100%; max-width: 390px; padding: 10px 15px 30px; box-sizing: border-box; display: flex; flex-direction: column; position: relative; }
+
+        header { text-align: center; margin: 10px 0 20px; }
+        .header-text {
+            font-family: 'Cinzel', serif; font-size: 34px; line-height: 1.1; letter-spacing: 2px; font-weight: 900;
+            background: var(--gold-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 15px var(--glow-gold)); text-transform: uppercase; margin: 0;
+        }
+
+        /* NAVIGATION & UNIT TOGGLE */
+        .nav-container { display: flex; align-items: center; gap: 10px; margin-bottom: 25px; }
+        .tab-nav {
+            flex: 1; display: flex; position: relative; background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px; padding: 4px; border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .tab-indicator {
+            position: absolute; height: calc(100% - 8px); width: calc(33.33% - 8px);
+            background: var(--gold-gradient); border-radius: 11px; top: 4px; left: 4px;
+            transition: transform 0.3s ease; z-index: 1;
+        }
+        .tab-btn {
+            flex: 1; padding: 12px 0; border: none; background: transparent; color: rgba(255, 255, 255, 0.6);
+            font-weight: 700; font-size: 10px; text-transform: uppercase; cursor: pointer; z-index: 2;
+            display: flex; flex-direction: column; align-items: center; gap: 4px;
+        }
+        .tab-btn.active { color: var(--dark-green); }
+
+        .unit-toggle {
+            width: 38px; height: 38px; border-radius: 50%;
+            background: var(--gold-gradient); border: 2px solid rgba(255, 255, 255, 0.2);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 10px; font-weight: 900; color: var(--dark-green); cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: 0.3s;
+        }
+        .unit-toggle:hover { transform: rotate(15deg) scale(1.05); }
+        .unit-toggle:active { transform: scale(0.9); }
+
+        /* SECTIONS */
+        section {
+            background: var(--glass-bg); padding: 24px; border-radius: 24px; margin-bottom: 25px;
+            border: 1px solid var(--primary-green); display: none; opacity: 0;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        section.active { display: block; opacity: 1; transition: opacity 0.3s ease; }
+
+        h2 { font-family: 'Cinzel', serif; color: var(--primary-green); font-size: 15px; text-transform: uppercase; letter-spacing: 2px; margin: 0 0 20px 0; border-bottom: 2px solid var(--primary-green); padding-bottom: 10px; }
+
+        input {
+            width: 100%; padding: 14px; margin-bottom: 12px; border-radius: 12px; border: 1px solid #ccc;
+            background: var(--input-bg); color: #0a4d44; font-family: 'Montserrat', sans-serif; font-size: 14px; 
+            box-sizing: border-box; outline: none; transition: 0.2s;
+        }
+        input:focus { border-color: var(--mid-gold); background: #fff; }
+
+        .btn-group { display: flex; gap: 10px; margin-top: 5px; }
+        .main-btn {
+            flex: 2; padding: 16px; background: var(--primary-green); color: var(--mid-gold); font-weight: 700;
+            letter-spacing: 2px; border: none; border-radius: 12px; text-transform: uppercase; cursor: pointer; transition: 0.3s;
+        }
+        .main-btn:hover { background: var(--dark-green); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+
+        .clear-btn {
+            flex: 1; padding: 16px; background: transparent; color: var(--primary-green); font-weight: 700;
+            border: 2px solid var(--primary-green); border-radius: 12px; text-transform: uppercase; cursor: pointer; font-size: 12px;
+        }
+
+        /* RESULT STYLE */
+        .result { 
+            background: #f8f9fa; border-radius: 12px; padding: 18px; margin-top: 20px; 
+            display: none; border: 1px solid var(--primary-green); border-left: 5px solid var(--mid-gold);
+            opacity: 0; transform: translateY(10px); transition: opacity 0.4s ease, transform 0.4s ease;
+        }
+        .result.show { display: block; opacity: 1; transform: translateY(0); }
+        .result-header { font-family: 'Cinzel', serif; font-size: 13px; color: var(--primary-green); margin-bottom: 12px; border-bottom: 1px solid #ddd; padding-bottom: 5px; text-transform: uppercase; font-weight: 900; }
+        .res-content { font-size: 13px; color: #333; line-height: 1.8; }
+        .res-content strong { color: var(--primary-green); font-weight: 700; }
+        .res-sep { margin: 12px 0; border-top: 1px dashed rgba(35, 115, 84, 0.3); }
+        .total-row { font-family: 'Cinzel', serif; margin-top: 10px; font-weight: 900; font-size: 18px; background: var(--gold-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+        /* FOOTER */
+        footer { text-align: center; margin-top: auto; display: flex; flex-direction: column; align-items: center; gap: 12px; padding-bottom: 20px; width: 100%; }
+        .gold-line { width: 85%; height: 2px; background: var(--gold-gradient); opacity: 0.8; }
+        .spartan-text { font-family: 'Cinzel', serif; font-size: 20px; letter-spacing: 6px; font-weight: 900; background: var(--gold-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 0; }
+        
+        .insta-btn {
+            display: flex; align-items: center; gap: 8px; padding: 8px 18px; border: 1px solid var(--mid-gold);
+            border-radius: 50px; color: var(--mid-gold); text-decoration: none; font-weight: 700; font-size: 11px; text-transform: uppercase; transition: 0.3s;
+        }
+        .insta-btn:hover { background: var(--gold-gradient); color: var(--dark-green); }
+
+        .disclaimer { font-size: 9px; color: rgba(255, 255, 255, 0.4); width: 80%; line-height: 1.4; margin-top: 5px; font-style: italic; }
+
+        .athlete-card { background: #ffffff; border: 1px solid rgba(35, 115, 84, 0.2); border-radius: 15px; padding: 15px; margin-bottom: 15px; }
+        .athlete-card-header { display: flex; align-items: center; margin-bottom: 12px; }
+        .athlete-icon { width: 24px; height: 24px; background: var(--gold-gradient); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; margin-right: 10px; font-size: 10px; }
+        .athlete-name { font-family: 'Cinzel', serif; font-size: 12px; color: var(--primary-green); font-weight: 900; }
+        .athlete-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .athlete-grid input { margin-bottom: 0; padding: 10px; font-size: 12px; }
+
+        .feedback-container { position: fixed; bottom: 20px; right: 20px; z-index: 1000; }
+        .feedback-icon { width: 44px; height: 44px; background: var(--gold-gradient); border-radius: 50%; display: flex; justify-content: center; align-items: center; color: var(--dark-green); cursor: pointer; box-shadow: 0 0 15px rgba(242, 194, 12, 0.6); font-size: 20px; transition: 0.3s; }
+        .pulsing { animation: pulse-gold 2s infinite; }
+        @keyframes pulse-gold { 0% { box-shadow: 0 0 0 0 rgba(242, 194, 12, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(242, 194, 12, 0); } 100% { box-shadow: 0 0 0 0 rgba(242, 194, 12, 0); } }
+        .feedback-tooltip { visibility: hidden; width: 240px; background: var(--dark-green); color: #fff; border-radius: 12px; padding: 15px; position: absolute; bottom: 125%; right: 0; opacity: 0; transition: 0.3s; font-size: 13px; border: 1px solid var(--mid-gold); }
+        .feedback-container.active .feedback-tooltip { visibility: visible; opacity: 1; transform: translateY(-5px); }
+    </style>
+</head>
+<body>
+
+<div class="app">
+    <header><p class="header-text">SHAPE<br>Track & Field</p></header>
+
+    <div class="nav-container">
+        <div class="tab-nav">
+            <div class="tab-indicator" id="indicator"></div>
+            <button class="tab-btn active" onclick="showTab('pace-section', this, 0)"><i class="fa-solid fa-stopwatch"></i>Pace</button>
+            <button class="tab-btn" onclick="showTab('split-section', this, 1)"><i class="fa-solid fa-bolt"></i>Splits</button>
+            <button class="tab-btn" onclick="showTab('relay-section', this, 2)"><i class="fa-solid fa-users-rays"></i>Relay</button>
+        </div>
+        <div class="unit-toggle" id="unitToggle" onclick="toggleUnit()">KM</div>
+    </div>
+
+    <section id="pace-section" class="active">
+        <h2>Pace Calculator</h2>
+        <input id="paceDist" placeholder="Distance (meters)">
+        <input id="paceTime" placeholder="Time (mm:ss.cc)">
+        <input id="paceVal" placeholder="Pace (mm:ss.cc)">
+        <div class="btn-group">
+            <button class="main-btn" onclick="calculatePace()">Calculate</button>
+            <button class="clear-btn" onclick="clearTab('pace-section')">Clear</button>
+        </div>
+        <div id="paceResult" class="result"></div>
+    </section>
+
+    <section id="split-section">
+        <h2>Split Generator</h2>
+        <input id="distance" placeholder="Total distance (meters)">
+        <input id="interval" placeholder="Split interval (meters)">
+        <input id="totalTime" placeholder="Total time (mm:ss.cc)">
+        <div class="btn-group">
+            <button class="main-btn" onclick="calculateIntervals()">Generate</button>
+            <button class="clear-btn" onclick="clearTab('split-section')">Clear</button>
+        </div>
+        <div id="intervalResult" class="result"></div>
+    </section>
+
+    <section id="relay-section">
+        <h2>Relay Planning</h2>
+        <div style="display: flex; gap: 8px; margin-bottom: 20px;">
+            <input id="numAthletes" type="number" placeholder="# Athletes" style="margin-bottom: 0;">
+            <button class="main-btn" onclick="createAthletes()" style="flex: 0 0 80px; padding: 0;">SET</button>
+        </div>
+        <div id="athletesContainer"></div>
+        <input id="relayTime" placeholder="Target Relay Time (optional)">
+        <div class="btn-group">
+            <button class="main-btn" onclick="calculateRelay()">Analyze</button>
+            <button class="clear-btn" onclick="clearTab('relay-section')">Clear</button>
+        </div>
+        <div id="relayResult" class="result"></div>
+    </section>
+
+    <footer>
+        <div class="gold-line"></div>
+        <p class="spartan-text">We are Spartans</p>
+        <div class="gold-line"></div>
+        <a href="https://www.instagram.com/shape.track_field/" target="_blank" class="insta-btn">
+            <i class="fa-brands fa-instagram"></i> Follow @shape.track_field
+        </a>
+        <div class="disclaimer">
+            Developed by students for the athlete community. Not affiliated with official school athletics.
+        </div>
+    </footer>
+
+    <div class="feedback-container" id="feedbackBox" onclick="toggleFeedback()">
+        <div class="feedback-icon pulsing" id="feedbackIcon"><i class="fa-solid fa-comment-dots"></i></div>
+        <div class="feedback-tooltip">
+            Hi team :) If you find any bugs or have ideas to make it better let me know.
+            <div style="height: 1px; background: var(--gold-gradient); margin: 10px 0; opacity: 0.5;"></div>
+            I made a deal with Wiktoria: If you win any of the SMRs at Euros, I’ll let you shave my head! I’m going to let it grow out until then. ;) Good luck!
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentUnit = 'KM';
+
+    function toggleUnit() {
+        currentUnit = (currentUnit === 'KM') ? 'MI' : 'KM';
+        document.getElementById('unitToggle').innerText = currentUnit;
+        const longUnit = currentUnit === 'KM' ? 'meters' : 'miles';
+        document.getElementById('paceDist').placeholder = `Distance (${longUnit})`;
+        document.getElementById('paceVal').placeholder = `Pace (mm:ss.cc /${currentUnit.toLowerCase()})`;
+        document.getElementById('distance').placeholder = `Total distance (${longUnit})`;
+        document.getElementById('interval').placeholder = `Split interval (${longUnit})`;
+        
+        if(document.getElementById('paceResult').classList.contains('show')) calculatePace();
+        if(document.getElementById('intervalResult').classList.contains('show')) calculateIntervals();
+    }
+
+    function showTab(sectionId, btn, index) {
+        const indicator = document.getElementById('indicator');
+        indicator.style.transform = `translateX(calc(${index * 100}% + ${index * 4}px))`;
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.querySelectorAll('section').forEach(s => { s.style.display = 'none'; s.classList.remove('active'); });
+        const target = document.getElementById(sectionId);
+        target.style.display = 'block';
+        setTimeout(() => target.classList.add('active'), 10);
+    }
+
+    function toggleFeedback() {
+        document.getElementById('feedbackBox').classList.toggle('active');
+        document.getElementById('feedbackIcon').classList.remove('pulsing');
+    }
+
+    function toSeconds(t) {
+        if(!t || !t.includes(":")) return parseFloat(t) || 0;
+        let p = t.split(":");
+        return (+p[0]*60) + parseFloat(p[1]);
+    }
+
+    function toTime(sec) {
+        let m = Math.floor(sec/60), s = Math.floor(sec%60), c = Math.round((sec-Math.floor(sec))*100);
+        return `${m}:${s.toString().padStart(2,"0")}.${c.toString().padStart(2,"0")}`;
+    }
+
+    function showResult(el, content) {
+        el.style.display = 'block';
+        el.classList.remove('show');
+        el.innerHTML = `<div class="res-content">${content}</div>`;
+        setTimeout(() => el.classList.add('show'), 20);
+    }
+
+    function calculatePace() {
+        let d = +document.getElementById("paceDist").value, tI = document.getElementById("paceTime").value, pI = document.getElementById("paceVal").value, res = document.getElementById("paceResult");
+        if(!d) return;
+        const unitDist = currentUnit === 'KM' ? 1000 : 1;
+        let s, l, v;
+        if(tI && !pI) {
+            let t = toSeconds(tI), p = (t/d)*unitDist;
+            s = (currentUnit === 'KM') ? (3600/p) : (d/toSeconds(tI))*3600;
+            l = "Pace"; v = toTime(p) + ` /${currentUnit.toLowerCase()}`;
+        } else {
+            let p = toSeconds(pI), t = (p/unitDist)*d;
+            s = 3600/toSeconds(pI);
+            l = "Total Time"; v = toTime(t);
+        }
+        showResult(res, `<div class="result-header">Results (${currentUnit})</div><strong>Avg Speed:</strong> ${s.toFixed(2)} ${currentUnit}/h<div class="res-sep"></div><div class="total-row">${l}: ${v}</div>`);
+    }
+
+    function calculateIntervals() {
+        let d = +document.getElementById("distance").value, i = +document.getElementById("interval").value, t = toSeconds(document.getElementById("totalTime").value), res = document.getElementById("intervalResult");
+        if(!d || !t || !i) return; let reps = d/i, out = `<div class="result-header">Splits (${currentUnit === 'KM' ? 'Meters' : 'Miles'})</div>`;
+        const suffix = currentUnit === 'KM' ? 'm' : 'mi';
+        for(let x=1; x<=reps; x++) out += `<strong>${(x*i).toFixed(2)}${suffix}:</strong> ${toTime((t/reps)*x)}<br>`;
+        showResult(res, out);
+    }
+
+    function createAthletes() {
+        const n = document.getElementById("numAthletes").value, container = document.getElementById("athletesContainer");
+        container.innerHTML = "";
+        for (let i=1; i<=n; i++) {
+            const card = document.createElement('div'); card.className = 'athlete-card';
+            card.innerHTML = `<div class="athlete-card-header"><div class="athlete-icon"><i class="fa-solid fa-user"></i></div><span class="athlete-name">Athlete ${i}</span></div><div class="athlete-grid"><input type="number" class="ath-dist" placeholder="Distance (m)"><input type="text" class="ath-time" placeholder="Time (optional)"></div>`;
+            container.appendChild(card);
+        }
+    }
+
+    function calculateRelay() {
+        const target = toSeconds(document.getElementById("relayTime").value), dI = document.querySelectorAll(".ath-dist"), tI = document.querySelectorAll(".ath-time"), res = document.getElementById("relayResult");
+        let tk = 0, ud = 0, results = [];
+        dI.forEach((d, i) => {
+            let dist = parseFloat(d.value)||0, time = tI[i].value ? toSeconds(tI[i].value) : null;
+            if (time) tk += time; else ud += dist; results.push({dist, time});
+        });
+        let out = `<div class="result-header">Relay Analysis (Meters)</div>`;
+        results.forEach((r, i) => {
+            let dt = r.time ? toTime(r.time) : (ud > 0 ? toTime((target - tk) * (r.dist / ud)) : "---");
+            out += `<strong>Athlete ${i+1}:</strong> ${dt}<br>`;
+        });
+        if(target) out += `<div class="res-sep"></div><div class="total-row">Target: ${toTime(target)}</div>`;
+        showResult(res, out);
+    }
+
+    function clearTab(sectionId) {
+        const section = document.getElementById(sectionId);
+        section.querySelectorAll('input').forEach(i => i.value = '');
+        const res = section.querySelector('.result');
+        if(res) { res.classList.remove('show'); setTimeout(() => res.style.display = 'none', 400); }
+        if(sectionId === 'relay-section') document.getElementById('athletesContainer').innerHTML = '';
+    }
+</script>
+</body>
+</html>
